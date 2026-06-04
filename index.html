@@ -531,11 +531,12 @@ function filtrar() {
   const busca = document.getElementById("busca").value.toLowerCase();
   const cat   = document.getElementById("filtro-cat").value;
   const forn  = document.getElementById("filtro-forn").value;
+  const taxa = getTaxa();
   const lista = PRODUTOS.filter(p =>
     (!busca || p.nome.toLowerCase().includes(busca) || p.descricao.toLowerCase().includes(busca)) &&
     (!cat  || p.cat.includes(cat)) &&
     (!forn || p.fornecedor === forn)
-  );
+  ).sort((a, b) => (a.custoUSD * a.qtd * taxa) - (b.custoUSD * b.qtd * taxa));
   renderizar(lista);
 }
 
