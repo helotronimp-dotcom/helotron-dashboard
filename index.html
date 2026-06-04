@@ -178,8 +178,8 @@
   </div>
   <div class="card verde">
     <div class="card-label">Total Investido (BRL)</div>
-    <div class="card-valor" id="total-brl">—</div>
-    <div class="card-sub">Cotação dinâmica</div>
+    <div class="card-valor">R$ 151.955,61</div>
+    <div class="card-sub">Valor real pago via SWIFT/Wise</div>
   </div>
   <div class="card roxo">
     <div class="card-label">Total de Unidades</div>
@@ -263,6 +263,11 @@
 </div>
 
 <script>
+// taxaReal = câmbio efetivo pago via SWIFT/Wise (custo FOB em BRL já fixado)
+// GreenEarth: R$33.445,99 ÷ USD 6.223,70 = 5,3754 | YuNan: R$13.274,01 ÷ USD 2.469,42 = 5,3756
+// TeMeiHui: R$105.235,61 ÷ USD 20.850,36 = 5,0474
+const TAXA_REAL = { GreenEarth: 5.3754, YuNan: 5.3756, TeMeiHui: 5.0474 };
+
 const PRODUTOS = [
   // ── GREENEARTH ──────────────────────────────────────────────
   {
@@ -415,13 +420,16 @@ function calcNac(p, taxa, params, totalFOBusd) {
   const fobUnit     = p.custoUSD;
   const fobTotalUSD = fobUnit * p.qtd;
 
+  // Usa taxa real paga via SWIFT/Wise para o custo FOB (fixado)
+  const taxaFOB = TAXA_REAL[p.fornecedor] || taxa;
+
   // Rateio pro-rata pelo valor FOB
   const ratioFrete   = totalFOBusd > 0 ? fobTotalUSD / totalFOBusd : 0;
   const freteIntUnit = (params.freteInt * ratioFrete / p.qtd) * taxa;
   const freteRodUnit = (params.freteRod * ratioFrete / p.qtd);
 
-  // Base CIF em BRL (por unidade)
-  const cif = (fobUnit + params.freteInt * ratioFrete / p.qtd) * taxa;
+  // Base CIF em BRL (por unidade) — FOB usa taxa real, frete usa taxa atual
+  const cif = fobUnit * taxaFOB + params.freteInt * ratioFrete / p.qtd * taxa;
 
   // Impostos com alíquotas individuais por NCM
   const ii     = cif * p.ii;
@@ -434,7 +442,7 @@ function calcNac(p, taxa, params, totalFOBusd) {
   const icms     = baseIcms / (1 - params.icms) * params.icms;
   const impostos = ii + ipi + pis + cofins + icms;
 
-  const nacUnit  = fobUnit * taxa + freteIntUnit + freteRodUnit + impostos;
+  const nacUnit  = fobUnit * taxaFOB + freteIntUnit + freteRodUnit + impostos;
   const nacTotal = nacUnit * p.qtd;
 
   return { freteIntUnit, freteRodUnit, impostos, nacUnit, nacTotal };
