@@ -178,8 +178,8 @@
   </div>
   <div class="card verde">
     <div class="card-label">Total Investido (BRL)</div>
-    <div class="card-valor">R$ 151.955,61</div>
-    <div class="card-sub">Valor real pago via SWIFT/Wise</div>
+    <div class="card-valor" id="total-brl">—</div>
+    <div class="card-sub">Real pago: R$ 151.955,61 · Cotação dinâmica</div>
   </div>
   <div class="card roxo">
     <div class="card-label">Total de Unidades</div>
@@ -227,6 +227,7 @@
       <th>Volume Caixa</th>
       <th>Custo Unit. USD</th>
       <th>Custo Unit. BRL</th>
+      <th>FOB Pago (BRL)</th>
       <th>Total USD</th>
       <th>Total BRL</th>
       <th class="nac-th">II%</th>
@@ -250,6 +251,7 @@
       <td></td>
       <td></td>
       <td></td>
+      <td style="background:#166534;color:#fff;font-size:11px">R$ 151.955,61<br><span style="font-weight:400;opacity:0.8">real pago</span></td>
       <td id="ft-usd" class="num"></td>
       <td id="ft-brl" class="num"></td>
       <td colspan="5"></td>
@@ -460,9 +462,11 @@ function renderizar(lista) {
   let totalUSD = 0, totalBRL = 0, totalQtd = 0, totalNac = 0;
 
   lista.forEach(p => {
-    const custoTotalUSD = p.custoUSD * p.qtd;
-    const custoBRL      = p.custoUSD * taxa;
-    const custoTotalBRL = custoBRL * p.qtd;
+    const custoTotalUSD  = p.custoUSD * p.qtd;
+    const custoBRL       = p.custoUSD * taxa;
+    const custoTotalBRL  = custoBRL * p.qtd;
+    const taxaFOB        = TAXA_REAL[p.fornecedor] || taxa;
+    const custoPagoBRL   = p.custoUSD * taxaFOB;
     totalUSD += custoTotalUSD;
     totalBRL += custoTotalBRL;
     totalQtd += p.qtd;
@@ -489,6 +493,7 @@ function renderizar(lista) {
         <td style="font-size:11px;color:#777">${p.cxSize}${p.pcsPerCtn ? '<br><span style="color:#aaa">'+p.pcsPerCtn+' un/cx</span>' : ''}</td>
         <td class="num custo-usd">${fmtUSD(p.custoUSD)}</td>
         <td class="num custo-brl">${fmt(custoBRL)}</td>
+        <td class="num" style="color:#15803d;font-weight:700;background:#f0fdf4">${fmt(custoPagoBRL)}<br><span style="font-size:10px;color:#aaa;font-weight:400">@ ${taxaFOB.toFixed(4)}</span></td>
         <td class="num custo-usd">${fmtUSD(custoTotalUSD)}</td>
         <td class="num custo-brl">${fmt(custoTotalBRL)}</td>
         <td class="num nac" style="font-size:12px">${(p.ii*100).toFixed(1)}%</td>
