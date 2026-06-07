@@ -6,17 +6,17 @@ from email.mime.text import MIMEText
 from datetime import datetime
 
 PRODUTOS = [
-    {"interno": "Cortador de Alimentos 16 em 1",     "busca": "cortador fatiador legumes 16 em 1"},
-    {"interno": "Fatiador Rotativo de Legumes",       "busca": "ralador fatiador legumes manual inox"},
-    {"interno": "Kit 7 Potes Hermeticos",             "busca": "kit 7 potes hermeticos acrilico"},
-    {"interno": "Conjunto Potes Organizadores",       "busca": "organizador geladeira pote hermetico 3 pecas"},
-    {"interno": "Tapete de Silicone para Cozinha",    "busca": "descanso panela silicone antitermico"},
-    {"interno": "Spray de Oleo Cozinha",              "busca": "pulverizador spray oleo cozinha vidro"},
-    {"interno": "Luminaria Solar Flamingo 2 un.",     "busca": "luminaria solar flamingo jardim 2"},
-    {"interno": "Luminaria Solar Flamingo 3 un.",     "busca": "enfeite solar flamingo jardim 3"},
-    {"interno": "Luminaria Solar Hortensia 3 Hastes", "busca": "luminaria solar hortensia jardim 3 hastes"},
-    {"interno": "Luminaria Solar Hortensia PVC",      "busca": "luz solar hortensia pvc jardim"},
-    {"interno": "Luminaria Solar Hortensia Ferro",    "busca": "luz solar hortensia ferro jardim"},
+    {"interno": "Cortador de Alimentos 16 em 1",     "busca": "cortador legumes 16 em 1"},
+    {"interno": "Fatiador Rotativo de Legumes",       "busca": "fatiador legumes manual"},
+    {"interno": "Kit 7 Potes Hermeticos",             "busca": "kit potes hermeticos"},
+    {"interno": "Conjunto Potes Organizadores",       "busca": "potes organizadores geladeira hermetico"},
+    {"interno": "Tapete de Silicone para Cozinha",    "busca": "tapete silicone cozinha"},
+    {"interno": "Spray de Oleo Cozinha",              "busca": "spray oleo cozinha"},
+    {"interno": "Luminaria Solar Flamingo 2 un.",     "busca": "luminaria solar flamingo jardim"},
+    {"interno": "Luminaria Solar Flamingo 3 un.",     "busca": "luminaria solar flamingo 3 unidades"},
+    {"interno": "Luminaria Solar Hortensia 3 Hastes", "busca": "luminaria solar hortensia jardim"},
+    {"interno": "Luminaria Solar Hortensia PVC",      "busca": "luminaria solar hortensia pvc"},
+    {"interno": "Luminaria Solar Hortensia Ferro",    "busca": "luminaria solar hortensia ferro"},
 ]
 
 NOSSOS_PRECOS = {
@@ -38,11 +38,15 @@ def buscar_precos_ml(busca):
     params = {"q": busca, "limit": 50}
     try:
         r = requests.get(url, params=params, timeout=15)
+        r.raise_for_status()
         data = r.json()
-        precos = [item["price"] for item in data.get("results", []) if item.get("price", 0) > 5]
+        total = data.get("paging", {}).get("total", 0)
+        resultados = data.get("results", [])
+        precos = [item["price"] for item in resultados if item.get("price", 0) > 5]
+        print(f"  → {total} anúncios encontrados, {len(precos)} com preço válido")
         return precos
     except Exception as e:
-        print(f"Erro ao buscar {busca}: {e}")
+        print(f"  → ERRO: {e}")
         return []
 
 def analisar(precos):
