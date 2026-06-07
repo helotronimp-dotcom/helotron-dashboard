@@ -1,0 +1,28 @@
+name: Monitor de Precos ML
+
+on:
+  schedule:
+    - cron: '0 11 */2 * *'  # A cada 2 dias às 08:00 horário de Brasília (11:00 UTC)
+  workflow_dispatch:          # Permite rodar manualmente pelo GitHub
+
+jobs:
+  monitorar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install requests
+
+      - name: Rodar monitor de preços
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: python monitor_precos_cloud.py
