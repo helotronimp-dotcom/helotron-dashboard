@@ -33,11 +33,43 @@ NOSSOS_PRECOS = {
     "Luminaria Solar Hortensia Ferro":   None,
 }
 
-def buscar_precos_ml(busca):
+def obter_access_token():
+    app_id = os.environ.get("ML_APP_ID", "")
+    secret = os.environ.get("ML_CLIENT_SECRET", "")
+    if not app_id or not secret:
+        print("AVISO: ML_APP_ID ou ML_CLIENT_SECRET não configurados. Tentando sem autenticação.")
+        return None
+    try:
+        r = requests.post(
+            "https://api.mercadolibre.com/oauth/token",
+            data={
+                "grant_type": "client_credentials",
+                "client_id": app_id,
+                "client_secret": secret,
+            },
+            timeout=15,
+        )
+        token = r.json().get("access_token")
+        if token:
+            print("Token ML obtido com sucesso.")
+        else:
+            print(f"Falha ao obter token: {r.text[:200]}")
+        return token
+    except Exception as e:
+        print(f"Erro ao obter token: {e}")
+        return None
+
+def buscar_precos_ml(busca, token=None):
     url = "https://api.mercadolibre.com/sites/MLB/search"
     params = {"q": busca, "limit": 50}
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
     try:
-        r = requests.get(url, params=params, timeout=15)
+        r = requests.get(url, params=params, headers=headers, timeout=15)
+        if r.status_code == 403:
+            print(f"  → BLOQUEADO (403): {r.text[:100]}")
+            return []
         r.raise_for_status()
         data = r.json()
         total = data.get("paging", {}).get("total", 0)
@@ -123,7 +155,7 @@ def gerar_html(resultados, agora):
 def enviar_email(html, agora):
     remetente = os.environ["GMAIL_USER"]
     senha     = os.environ["GMAIL_APP_PASSWORD"]
-    destinatario = remetente  # envia para o próprio Gmail da Helotron
+    destinatario = remetente
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"📊 Monitor de Preços ML — {agora}"
@@ -140,10 +172,12 @@ def main():
     agora = datetime.now().strftime("%d/%m/%Y %H:%M")
     print(f"Iniciando monitoramento — {agora}")
 
+    token = obter_access_token()
+
     resultados = []
     for p in PRODUTOS:
         print(f"Buscando: {p['interno']}...")
-        precos = buscar_precos_ml(p["busca"])
+        precos = buscar_precos_ml(p["busca"], token)
         dados  = analisar(precos)
         resultados.append({
             "produto": p["interno"],
