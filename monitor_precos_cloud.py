@@ -34,11 +34,12 @@ NOSSOS_PRECOS = {
 }
 
 def buscar_precos_ml(busca):
+    import urllib.parse
     scraper_key = os.environ.get("SCRAPER_API_KEY", "")
-    target = f"https://api.mercadolibre.com/sites/MLB/search?q={requests.utils.quote(busca)}&limit=50"
+    target = "https://api.mercadolibre.com/sites/MLB/search?" + urllib.parse.urlencode({"q": busca, "limit": 50})
 
     if scraper_key:
-        url = f"http://api.scraperapi.com?api_key={scraper_key}&url={requests.utils.quote(target)}"
+        url = "http://api.scraperapi.com?" + urllib.parse.urlencode({"api_key": scraper_key, "url": target})
     else:
         url = target
 
