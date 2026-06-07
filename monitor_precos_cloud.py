@@ -46,10 +46,9 @@ def buscar_precos_ml(busca):
 
     try:
         r = requests.get(url, **kwargs)
-        if r.status_code == 403:
-            print(f"  → BLOQUEADO (403): {r.text[:100]}")
+        if not r.ok:
+            print(f"  → HTTP {r.status_code}: {r.text[:300]}")
             return []
-        r.raise_for_status()
         data = r.json()
         total = data.get("paging", {}).get("total", 0)
         resultados = data.get("results", [])
