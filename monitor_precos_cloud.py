@@ -4,6 +4,7 @@ import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 PRODUTOS = [
     {"interno": "Cortador de Alimentos 16 em 1",     "busca": "cortador fatiador legumes 16 em 1"},
@@ -133,7 +134,7 @@ def enviar_email(html, agora):
     print(f"Email enviado para {destinatario}")
 
 def main():
-    agora = datetime.now().strftime("%d/%m/%Y %H:%M")
+    agora = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%d/%m/%Y %H:%M")
     print(f"Iniciando monitoramento — {agora}")
 
     resultados = []
