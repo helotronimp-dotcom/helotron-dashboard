@@ -34,17 +34,18 @@ NOSSOS_PRECOS = {
 }
 
 def buscar_precos_ml(busca):
-    import urllib.parse
     scraper_key = os.environ.get("SCRAPER_API_KEY", "")
-    target = "https://api.mercadolibre.com/sites/MLB/search?" + urllib.parse.urlencode({"q": busca, "limit": 50})
+    url = "https://api.mercadolibre.com/sites/MLB/search"
+    params = {"q": busca, "limit": 50}
 
+    kwargs = {"timeout": 60, "params": params}
     if scraper_key:
-        url = "http://api.scraperapi.com?" + urllib.parse.urlencode({"api_key": scraper_key, "url": target})
-    else:
-        url = target
+        proxy = f"http://scraperapi:{scraper_key}@proxy-server.scraperapi.com:8001"
+        kwargs["proxies"] = {"http": proxy, "https": proxy}
+        kwargs["verify"] = False
 
     try:
-        r = requests.get(url, timeout=60)
+        r = requests.get(url, **kwargs)
         if r.status_code == 403:
             print(f"  → BLOQUEADO (403): {r.text[:100]}")
             return []
