@@ -34,26 +34,18 @@ NOSSOS_PRECOS = {
 }
 
 def buscar_precos_ml(busca):
-    scraper_key = os.environ.get("SCRAPER_API_KEY", "")
     url = "https://api.mercadolibre.com/sites/MLB/search"
     params = {"q": busca, "limit": 50}
-
-    kwargs = {"timeout": 60, "params": params}
-    if scraper_key:
-        proxy = f"http://scraperapi:{scraper_key}@proxy-server.scraperapi.com:8001"
-        kwargs["proxies"] = {"http": proxy, "https": proxy}
-        kwargs["verify"] = False
-
     try:
-        r = requests.get(url, **kwargs)
+        r = requests.get(url, params=params, timeout=15)
         if not r.ok:
-            print(f"  → HTTP {r.status_code}: {r.text[:300]}")
+            print(f"  → HTTP {r.status_code}: {r.text[:200]}")
             return []
         data = r.json()
         total = data.get("paging", {}).get("total", 0)
         resultados = data.get("results", [])
         precos = [item["price"] for item in resultados if item.get("price", 0) > 5]
-        print(f"  → {total} anúncios encontrados, {len(precos)} com preço válido")
+        print(f"  → {total} anúncios, {len(precos)} com preço válido")
         return precos
     except Exception as e:
         print(f"  → ERRO: {e}")
