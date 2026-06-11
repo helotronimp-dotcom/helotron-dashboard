@@ -34,16 +34,32 @@ NOSSOS_PRECOS = {
     "Luminaria Solar Hortensia Ferro":   None,
 }
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Referer": "https://www.mercadolivre.com.br/",
+    "Origin": "https://www.mercadolivre.com.br",
+}
+
 def buscar_precos_ml(busca):
+    import time, random
     url = "https://api.mercadolibre.com/sites/MLB/search"
     params = {"q": busca, "limit": 50}
     try:
-        r = requests.get(url, params=params, timeout=15)
+        time.sleep(random.uniform(2, 4))
+        r = requests.get(url, params=params, headers=HEADERS, timeout=20)
+        print(f"  Status HTTP: {r.status_code}")
+        if r.status_code != 200:
+            print(f"  Resposta: {r.text[:300]}")
+            return []
         data = r.json()
+        total = data.get("paging", {}).get("total", 0)
+        print(f"  Total ML: {total} anúncios encontrados")
         precos = [item["price"] for item in data.get("results", []) if item.get("price", 0) > 5]
         return precos
     except Exception as e:
-        print(f"Erro ao buscar {busca}: {e}")
+        print(f"  ERRO ao buscar '{busca}': {e}")
         return []
 
 def analisar(precos):
@@ -138,10 +154,13 @@ def main():
     print(f"Iniciando monitoramento — {agora}")
 
     resultados = []
+    erros = 0
     for p in PRODUTOS:
         print(f"Buscando: {p['interno']}...")
         precos = buscar_precos_ml(p["busca"])
         dados  = analisar(precos)
+        if not dados:
+            erros += 1
         resultados.append({
             "produto": p["interno"],
             "minimo":  dados["minimo"] if dados else None,
@@ -149,6 +168,28 @@ def main():
             "maximo":  dados["maximo"] if dados else None,
             "anuncios": dados["total"] if dados else 0,
         })
+
+    # Se todos os produtos vieram sem dados, é falha na coleta — avisa no email
+    if erros == len(PRODUTOS):
+        print("⚠️ ATENÇÃO: Todos os produtos retornaram sem dados — possível bloqueio da API do ML.")
+        html = f"""
+        <html><body style="font-family:Arial,sans-serif;background:#f0f0f0;padding:20px">
+        <div style="max-width:700px;margin:auto;background:white;border-radius:10px;overflow:hidden">
+            <div style="background:#c62828;padding:20px;text-align:center">
+                <h1 style="color:white;margin:0;font-size:20px">⚠️ Falha na Coleta de Preços</h1>
+                <p style="color:#ffcdd2;margin:6px 0 0">Monitor de Preços ML — {agora}</p>
+            </div>
+            <div style="padding:20px;font-size:13px;color:#333;">
+                <p>A coleta de hoje retornou <strong>zero resultados</strong> para todos os {len(PRODUTOS)} produtos monitorados.</p>
+                <p><strong>Causa provável:</strong> A API pública do Mercado Livre está bloqueando requisições originadas dos servidores do GitHub Actions (AWS). Isso acontece quando o ML detecta tráfego automatizado de IPs de nuvem.</p>
+                <p><strong>Os dados do monitor local</strong> (monitor_precos.py via Selenium) continuam funcionando normalmente — verifique os CSVs em <code>vendas/dados/</code>.</p>
+                <p><strong>Próximo passo:</strong> Avaliar migração do monitor cloud para coleta via Selenium em ambiente próprio, ou autenticação OAuth com a API do ML.</p>
+            </div>
+        </div>
+        </body></html>"""
+        enviar_email(html, agora)
+        print("Email de erro enviado.")
+        return
 
     html = gerar_html(resultados, agora)
     enviar_email(html, agora)
