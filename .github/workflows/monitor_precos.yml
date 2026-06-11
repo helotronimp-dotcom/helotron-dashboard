@@ -1,9 +1,11 @@
 name: Monitor de Precos ML
 
 on:
-  schedule:
-    - cron: '0 11 */2 * *'  # A cada 2 dias às 08:00 horário de Brasília (11:00 UTC)
-  workflow_dispatch:          # Permite rodar manualmente pelo GitHub
+  # Agendamento desativado em 11/06/2026 — API do ML bloqueia IPs do GitHub Actions (AWS)
+  # Reativar após conta ML ter OAuth liberado (após primeiras vendas)
+  # schedule:
+  #   - cron: '0 11 */2 * *'  # A cada 2 dias às 08:00 horário de Brasília (11:00 UTC)
+  workflow_dispatch:          # Mantido para testes manuais via GitHub
 
 jobs:
   monitorar:
